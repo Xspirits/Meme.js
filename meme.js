@@ -47,141 +47,175 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-window.Meme = function(image, canvas, top, bottom) {
 
-	/*
-	Default top and bottom
-	*/
+window.Meme = function(opts){
+	var _meme = {
+		canvasElem: null,
+		canvasContext: null,
+		srcImage: null,
+		topText: '',
+		bottomText: '',
 
-	top = top || '';
-	bottom = bottom || '';
+		construct: function(opts) {
+			if( opts.canvas ) { 
+				_meme.setCanvas(opts.canvas);
+			}
 
-	/*
-	Deal with the canvas
-	*/
+			if( opts.image ) {
+				_meme.setImage(opts.image);
+			}
 
-	// If it's nothing, set it to a dummy value to trigger error
-	if (!canvas)
-		canvas = 0;
+			if( opts.topText ) {
+				_meme.setTopText(opts.topText);
+			}
 
-	// If it's a string, conver it
-	if (canvas.toUpperCase)
-		canvas = document.getElementById(canvas);
+			if( opts.bottomText ) {
+				_meme.setBottomText(opts.bottomText);
+			}
+		},
 
-	// If it's jQuery or Zepto, convert it
-	if (typeof $ == 'object' && (canvas instanceof $))
-		canvas = canvas[0];
+		setCanvas: function(canvas) {
+			//If we have a string or jQuery element, get the DOM object
+			if (_meme.isString(canvas)) { 
+				canvas = document.getElementById(canvas);
+			} else if (typeof $ == 'object' && (canvas instanceof $)) { 
+				canvas = canvas[0];
+			}
 
-	// Throw error
-	if (!(canvas instanceof HTMLCanvasElement))
-		throw new Error('No canvas selected');
+			if (!(canvas instanceof HTMLCanvasElement)) {
+				throw new Error('Invalid canvas');
+			}
 
-	// Get context
-	var context = canvas.getContext('2d');
+			_meme.canvasElem = canvas;
+			_meme.canvasContext = canvas.getContext('2d');
 
-	/*
-	Deal with the image
-	*/
+			//When we make a new canvas we have to set the font for it
+			_meme.resetFont();
+		},
 
-	// If there's no image, set it to a dummy value to trigger an error
-	if (!image)
-		image = 0;
+		setCanvasDimensions: function(w, h) {
+			_meme.canvasElem.width = w;
+			_meme.canvasElem.height = h;
+		},
 
-	// Convert it from a string
-	if (image.toUpperCase) {
-		var src = image;
-		image = new Image();
-		image.src = src;
+		setImage: function(image) {
+			if (_meme.isString(image)) {
+				var src = image;
+				image = new Image();
+				image.src = src;
+			}
+
+			if (!(image instanceof Image)) {
+				throw new Error('Invalid image');
+			}
+
+			_meme.srcImage = image;
+			_meme.srcImage.addEventListener('load', _meme.imageLoaded);
+		},
+
+		setTopText: function(text) {
+			_meme.topText = text;
+		},
+
+		setBottomText: function(text) {
+			_meme.bottomText = text;
+		},
+
+		redraw: function() {
+			_meme.drawImage();
+			_meme.drawText(_meme.topText, 'top');
+			_meme.drawText(_meme.bottomText, 'bottom');
+		},
+
+		drawText: function(text, topOrBottom, y) {
+			var canvas = _meme.canvasElem;
+			var context = _meme.canvasContext;
+
+			// Variable setup
+			topOrBottom = topOrBottom || 'top';
+			var fontSize = (canvas.height / 8);
+			var x = canvas.width / 2;
+			if (typeof y === 'undefined') {
+				y = fontSize;
+				if (topOrBottom === 'bottom') {
+					y = canvas.height - 10;
+				}
+			}
+
+			// Should we split it into multiple lines?
+			// if (context.measureText(text).width > (canvas.width * 1.1)) {
+
+			// 	// Split word by word
+			// 	var words = text.split(' ');
+			// 	var wordsLength = words.length;
+
+			// 	// Start with the entire string, removing one word at a time. If
+			// 	// that removal lets us make a line, place the line and recurse with
+			// 	// the rest. Removes words from the back if placing at the top;
+			// 	// removes words at the front if placing at the bottom.
+			// 	if (topOrBottom === 'top') {
+			// 		var i = wordsLength;
+			// 		while (i --) {
+			// 			var justThis = words.slice(0, i).join(' ');
+			// 			if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+			// 				drawText(justThis, topOrBottom, y);
+			// 				drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
+			// 				return;
+			// 			}
+			// 		}
+			// 	}
+			// 	else if (topOrBottom === 'bottom') {
+			// 		for (var i = 0; i < wordsLength; i ++) {
+			// 			var justThis = words.slice(i, wordsLength).join(' ');
+			// 			if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+			// 				drawText(justThis, topOrBottom, y);
+			// 				drawText(words.slice(0, i).join(' '), topOrBottom, y - fontSize);
+			// 				return;
+			// 			}
+			// 		}
+			// 	}
+			// }
+
+			// Draw!
+			context.fillText(text, x, y, canvas.width * .9);
+			context.strokeText(text, x, y, canvas.width * .9);
+		},
+
+		imageLoaded: function() {
+			_meme.redraw();
+		},
+
+		drawImage: function() {
+			var image = _meme.srcImage;
+
+			_meme.setCanvasDimensions(image.width, image.height);
+			_meme.canvasContext.drawImage(image, 0, 0);
+
+			_meme.resetFont();
+		},
+
+		resetFont: function() {
+			// Set up text variables
+			_meme.canvasContext.fillStyle = 'white';
+			_meme.canvasContext.strokeStyle = 'black';
+			_meme.canvasContext.lineWidth = 2;
+			var fontSize = (canvas.height / 8);
+			_meme.canvasContext.font = fontSize + 'px Impact';
+			_meme.canvasContext.textAlign = 'center';
+		},
+
+		isString: function(val) {
+			return typeof val == 'string' || val instanceof String;
+		}
+	};
+
+	_meme.construct(opts);
+
+	return {
+		setCanvas: 		_meme.setCanvas,
+		setImage: 		_meme.setImage,
+		setTopText: 	_meme.setTopText,
+		setBottomText: 	_meme.setBottomText,
+		redraw: 		_meme.redraw,
 	}
-
-	// Set the proper width and height of the canvas
-	var setCanvasDimensions = function(w, h) {
-		canvas.width = w;
-		canvas.height = h;
-	};
-	setCanvasDimensions(image.width, image.height);	
-
-	/*
-	Draw a centered meme string
-	*/
-
-	var drawText = function(text, topOrBottom, y) {
-
-		// Variable setup
-		topOrBottom = topOrBottom || 'top';
-		var fontSize = (canvas.height / 8);
-		var x = canvas.width / 2;
-		if (typeof y === 'undefined') {
-			y = fontSize;
-			if (topOrBottom === 'bottom')
-				y = canvas.height - 10;
-		}
-
-		// Should we split it into multiple lines?
-		if (context.measureText(text).width > (canvas.width * 1.1)) {
-
-			// Split word by word
-			var words = text.split(' ');
-			var wordsLength = words.length;
-
-			// Start with the entire string, removing one word at a time. If
-			// that removal lets us make a line, place the line and recurse with
-			// the rest. Removes words from the back if placing at the top;
-			// removes words at the front if placing at the bottom.
-			if (topOrBottom === 'top') {
-				var i = wordsLength;
-				while (i --) {
-					var justThis = words.slice(0, i).join(' ');
-					if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-						drawText(justThis, topOrBottom, y);
-						drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
-						return;
-					}
-				}
-			}
-			else if (topOrBottom === 'bottom') {
-				for (var i = 0; i < wordsLength; i ++) {
-					var justThis = words.slice(i, wordsLength).join(' ');
-					if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-						drawText(justThis, topOrBottom, y);
-						drawText(words.slice(0, i).join(' '), topOrBottom, y - fontSize);
-						return;
-					}
-				}
-			}
-
-		}
-
-		// Draw!
-		context.fillText(text, x, y, canvas.width * .9);
-		context.strokeText(text, x, y, canvas.width * .9);
-
-	};
-
-	/*
-	Do everything else after image loads
-	*/
-
-	image.onload = function() {
-
-		// Set dimensions
-		setCanvasDimensions(this.width, this.height);
-
-		// Draw the image
-		context.drawImage(image, 0, 0);
-
-		// Set up text variables
-		context.fillStyle = 'white';
-		context.strokeStyle = 'black';
-		context.lineWidth = 2;
-		var fontSize = (canvas.height / 8);
-		context.font = fontSize + 'px Impact';
-		context.textAlign = 'center';
-
-		// Draw them!
-		drawText(top, 'top');
-		drawText(bottom, 'bottom');
-
-	};
-
 };
