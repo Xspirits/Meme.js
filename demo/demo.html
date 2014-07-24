@@ -46,8 +46,11 @@
 
 	<canvas id="canvas"></canvas>
 
-	<input id="imageSrc" value="http://assets.vg247.com/current//2014/04/dungeon_defenders.jpg">
+	<input id="imageSrc" value="example.jpg">
 	<input id="fontSize" value="-1">
+	<br />
+	<input type="button" id="upload" value="Upload Image">
+	<input id="uploadedUrl" placeholder="Uploaded Url" readonly>
 
 	<script>
 		var elems = {
@@ -55,6 +58,8 @@
 			bottom: document.getElementById('bottom-line'),
 			imageSrc: document.getElementById('imageSrc'),
 			fontSize: document.getElementById('fontSize'),
+			uploadButton: document.getElementById('upload'),
+			uploadedUrl: document.getElementById('uploadedUrl'),
 		};
 
 		var tmp = new Meme({
@@ -82,6 +87,33 @@
 
 		elems.imageSrc.addEventListener('keyup', function() {
 			tmp.setImage(elems.imageSrc.value);
+		}, false);
+
+
+
+		elems.uploadButton.addEventListener('click', function() {
+			var fd = new FormData();
+			fd.append("file", tmp.getImageData());
+
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', 'http://172.28.128.10/uploads', true);
+			xhr.setRequestHeader('Authorization', 'v7sT6Osgb17Gm1zuqFfOyGftQZ9iaEvXLDWyRfMg');
+
+			xhr.upload.onprogress = function(e) {
+				if (e.lengthComputable) {
+					var percentComplete = (e.loaded / e.total) * 100;
+					elems.uploadedUrl.value = percentComplete + '% uploaded';
+				}
+			}
+
+			xhr.onload = function() {
+				if (this.status == 200) {
+					var resp = JSON.parse(this.response);
+					console.log('Server got:', resp);
+				}
+			}
+
+			xhr.send(fd);
 		}, false);
 
 	</script>
