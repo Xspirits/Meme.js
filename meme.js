@@ -50,11 +50,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 window.Meme = function(opts){
 	var _meme = {
+		inited: false,
 		canvasElem: null,
 		canvasContext: null,
 		srcImage: null,
 		topText: '',
 		bottomText: '',
+		font: {
+			fillStyle: 'white',
+			strokeStyle: 'black',
+			strokeWidth: 2,
+			bold: false,
+			font: 'Impact',
+			fontSize: -1,
+			textAlign: 'center',
+			spacingMultiplier: 1.2
+		},
 
 		construct: function(opts) {
 			if( opts.canvas ) { 
@@ -72,6 +83,12 @@ window.Meme = function(opts){
 			if( opts.bottomText ) {
 				_meme.setBottomText(opts.bottomText);
 			}
+
+			if( opts.font ) {
+				_meme.setFont(opts.font);
+			}
+
+			_meme.inited = true;
 		},
 
 		setCanvas: function(canvas) {
@@ -89,8 +106,7 @@ window.Meme = function(opts){
 			_meme.canvasElem = canvas;
 			_meme.canvasContext = canvas.getContext('2d');
 
-			//When we make a new canvas we have to set the font for it
-			_meme.resetFont();
+			_meme.redraw();
 		},
 
 		setCanvasDimensions: function(w, h) {
@@ -115,13 +131,24 @@ window.Meme = function(opts){
 
 		setTopText: function(text) {
 			_meme.topText = text;
+			_meme.redraw();
 		},
 
 		setBottomText: function(text) {
 			_meme.bottomText = text;
+			_meme.redraw();
+		},
+
+		setFont: function(font) {
+			for(var key in _meme.font) {
+				_meme.font[key] = (typeof font[key] != 'undefined') ? font[key] : _meme.font[key];
+			}
+			_meme.redraw();
 		},
 
 		redraw: function() {
+			if(!_meme.inited){ return false; }
+
 			_meme.drawImage();
 			_meme.drawText(_meme.topText, 'top');
 			_meme.drawText(_meme.bottomText, 'bottom');
@@ -133,52 +160,52 @@ window.Meme = function(opts){
 
 			// Variable setup
 			topOrBottom = topOrBottom || 'top';
-			var fontSize = (canvas.height / 8);
+			_meme.canvasContext.textBaseline = topOrBottom;
+
+			var fontSize = _meme.getFontSize();
 			var x = canvas.width / 2;
+
 			if (typeof y === 'undefined') {
-				y = fontSize;
-				if (topOrBottom === 'bottom') {
-					y = canvas.height - 10;
-				}
+				y = topOrBottom === 'bottom' ? canvas.height : 0;
 			}
 
 			// Should we split it into multiple lines?
-			// if (context.measureText(text).width > (canvas.width * 1.1)) {
+			if (context.measureText(text).width > canvas.width) {
 
-			// 	// Split word by word
-			// 	var words = text.split(' ');
-			// 	var wordsLength = words.length;
+				// Split word by word
+				var words = text.split(' ');
+				var wordsLength = words.length;
 
-			// 	// Start with the entire string, removing one word at a time. If
-			// 	// that removal lets us make a line, place the line and recurse with
-			// 	// the rest. Removes words from the back if placing at the top;
-			// 	// removes words at the front if placing at the bottom.
-			// 	if (topOrBottom === 'top') {
-			// 		var i = wordsLength;
-			// 		while (i --) {
-			// 			var justThis = words.slice(0, i).join(' ');
-			// 			if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-			// 				drawText(justThis, topOrBottom, y);
-			// 				drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
-			// 				return;
-			// 			}
-			// 		}
-			// 	}
-			// 	else if (topOrBottom === 'bottom') {
-			// 		for (var i = 0; i < wordsLength; i ++) {
-			// 			var justThis = words.slice(i, wordsLength).join(' ');
-			// 			if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-			// 				drawText(justThis, topOrBottom, y);
-			// 				drawText(words.slice(0, i).join(' '), topOrBottom, y - fontSize);
-			// 				return;
-			// 			}
-			// 		}
-			// 	}
-			// }
+				// Start with the entire string, removing one word at a time. If
+				// that removal lets us make a line, place the line and recurse with
+				// the rest. Removes words from the back if placing at the top;
+				// removes words at the front if placing at the bottom.
+				if (topOrBottom === 'top') {
+					var i = wordsLength;
+					while (i --) {
+						var justThis = words.slice(0, i).join(' ');
+						if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+							_meme.drawText(justThis, topOrBottom, y);
+							_meme.drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
+							return;
+						}
+					}
+				}
+				else if (topOrBottom === 'bottom') {
+					for (var i = 0; i < wordsLength; i ++) {
+						var justThis = words.slice(i, wordsLength).join(' ');
+						if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+							_meme.drawText(justThis, topOrBottom, y);
+							_meme.drawText(words.slice(0, i).join(' '), topOrBottom, y - fontSize);
+							return;
+						}
+					}
+				}
+			}
 
 			// Draw!
-			context.fillText(text, x, y, canvas.width * .9);
-			context.strokeText(text, x, y, canvas.width * .9);
+			context.fillText(text, x, y, canvas.width * .95);
+			context.strokeText(text, x, y, canvas.width * .95);
 		},
 
 		imageLoaded: function() {
@@ -196,12 +223,18 @@ window.Meme = function(opts){
 
 		resetFont: function() {
 			// Set up text variables
-			_meme.canvasContext.fillStyle = 'white';
-			_meme.canvasContext.strokeStyle = 'black';
-			_meme.canvasContext.lineWidth = 2;
-			var fontSize = (canvas.height / 8);
-			_meme.canvasContext.font = fontSize + 'px Impact';
-			_meme.canvasContext.textAlign = 'center';
+			_meme.canvasContext.fillStyle = _meme.font.fillStyle;
+			_meme.canvasContext.strokeStyle = _meme.font.strokeStyle;
+			_meme.canvasContext.lineWidth = _meme.font.strokeWidth;
+			_meme.canvasContext.textAlign = _meme.font.textAlign;
+
+			var bold = _meme.font.bold ? 'bold ' : '';
+			var fontSize = _meme.getFontSize() * _meme.font.spacingMultiplier;
+			_meme.canvasContext.font = bold + fontSize + 'px ' + _meme.font.font;
+		},
+
+		getFontSize: function() {
+			return  _meme.font.fontSize == -1 ? (_meme.canvasElem.height / 8) : _meme.font.fontSize;
 		},
 
 		isString: function(val) {
@@ -216,6 +249,7 @@ window.Meme = function(opts){
 		setImage: 		_meme.setImage,
 		setTopText: 	_meme.setTopText,
 		setBottomText: 	_meme.setBottomText,
+		setFont: 		_meme.setFont,
 		redraw: 		_meme.redraw,
 	}
 };
