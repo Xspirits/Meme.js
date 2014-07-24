@@ -12,7 +12,7 @@
 		text-align: center;
 	}
 
-	#top-line, #bottom-line {
+	input {
 		padding: .5em;
 		border: 1px solid #999;
 		font: inherit;
@@ -39,20 +39,35 @@
 
 	<canvas id="canvas"></canvas>
 
+	<input id="imageSrc" value="example.jpg">
+
 	<script>
-
-		Meme('example.jpg', 'canvas');
-
 		var elems = {
 			'top': document.getElementById('top-line'),
-			'bottom': document.getElementById('bottom-line')
+			'bottom': document.getElementById('bottom-line'),
+			'imageSrc': document.getElementById('imageSrc')
 		};
 
-		for(var i in elems) {
-			elems[i].addEventListener('keyup', function() {
-				Meme('example.jpg', 'canvas', elems.top.value, elems.bottom.value);
-			}, false);
-		}
+		var tmp = new Meme({
+			'image': elems.imageSrc.value, 
+			'canvas': 'canvas',
+			'topText': 'Hello',
+			'bottomText': 'World'
+		});
+
+		elems.top.addEventListener('keyup', function() {
+			tmp.setTopText(elems.top.value);
+			tmp.redraw();
+		}, false);
+
+		elems.bottom.addEventListener('keyup', function() {
+			tmp.setBottomText(elems.bottom.value);
+			tmp.redraw();
+		}, false);
+
+		elems.imageSrc.addEventListener('keyup', function() {
+			tmp.setImage(elems.imageSrc.value);
+		}, false);
 
 	</script>
 </body>
