@@ -6,10 +6,17 @@
 
 	<!-- Demo CSS -->
 	<style>
+	@font-face {
+		font-family: "Single Sleeve";
+		src: url("sing.ttf") format("truetype");
+		font-weight: normal;
+		font-style: normal;
+	}
 
 	body {
 		font-family: sans-serif;
 		text-align: center;
+		/*font-family: "Single Sleeve";*/
 	}
 
 	input {
@@ -31,7 +38,7 @@
 </head>
 
 <body>
-
+<div style='font-family: "Single Sleeve";'>T</div>
 	<h1>Meme.js demo</h1>
 
 	<input id="top-line" placeholder="top line">
@@ -39,30 +46,38 @@
 
 	<canvas id="canvas"></canvas>
 
-	<input id="imageSrc" value="example.jpg">
+	<input id="imageSrc" value="http://assets.vg247.com/current//2014/04/dungeon_defenders.jpg">
+	<input id="fontSize" value="-1">
 
 	<script>
 		var elems = {
-			'top': document.getElementById('top-line'),
-			'bottom': document.getElementById('bottom-line'),
-			'imageSrc': document.getElementById('imageSrc')
+			top: document.getElementById('top-line'),
+			bottom: document.getElementById('bottom-line'),
+			imageSrc: document.getElementById('imageSrc'),
+			fontSize: document.getElementById('fontSize'),
 		};
 
 		var tmp = new Meme({
-			'image': elems.imageSrc.value, 
-			'canvas': 'canvas',
-			'topText': 'Hello',
-			'bottomText': 'World'
+			image: elems.imageSrc.value, 
+			canvas: 'canvas',
+			topText: 'This is top text This is top text This is top text This is top text This is top text This is top text',
+			bottomText: 'and here is some text on the bottom and here is some and here is some text on the bottom and here is some',
+			font: {
+				font: 'Single Sleeve',
+				bold: true
+			}
 		});
+
+		elems.fontSize.addEventListener('keyup', function() {
+			tmp.setFont({fontSize: elems.fontSize.value});
+		}, false);
 
 		elems.top.addEventListener('keyup', function() {
 			tmp.setTopText(elems.top.value);
-			tmp.redraw();
 		}, false);
 
 		elems.bottom.addEventListener('keyup', function() {
 			tmp.setBottomText(elems.bottom.value);
-			tmp.redraw();
 		}, false);
 
 		elems.imageSrc.addEventListener('keyup', function() {
