@@ -28,22 +28,6 @@
 	<!-- Meme script -->
 	<script src="../meme.js"></script>
 
-	<!-- Demo scripts -->
-	<script src="jquery.js"></script>
-	<script>
-
-	$.fn.ready(function() {
-
-		Meme('example.jpg', 'canvas');
-
-		$('#top-line, #bottom-line').keyup(function() {
-			Meme('example.jpg', 'canvas', $('#top-line').val(), $('#bottom-line').val());
-		});
-
-	});
-
-	</script>
-
 </head>
 
 <body>
@@ -55,5 +39,21 @@
 
 	<canvas id="canvas"></canvas>
 
+	<script>
+
+		Meme('example.jpg', 'canvas');
+
+		var elems = {
+			'top': document.getElementById('top-line'),
+			'bottom': document.getElementById('bottom-line')
+		};
+
+		for(var i in elems) {
+			elems[i].addEventListener('keyup', function() {
+				Meme('example.jpg', 'canvas', elems.top.value, elems.bottom.value);
+			}, false);
+		}
+
+	</script>
 </body>
 </html>
