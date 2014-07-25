@@ -99,7 +99,7 @@ window.Meme = function(opts){
 			if (_meme.isString(image)) {
 				var src = image;
 				image = new Image();
-				// image.crossOrigin = '';
+				image.crossOrigin = 'anonymous';
 				image.src = src;
 			}
 
