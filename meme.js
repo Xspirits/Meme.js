@@ -220,7 +220,7 @@ window.Meme = function(opts){
 		},
 
 		getImageData: function() {
-			return _meme.canvasElem.toDataURL();
+			return _meme.canvasElem.toDataURL('image/png');
 		},
 
 		isString: function(val) {
