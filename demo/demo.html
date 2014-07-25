@@ -51,6 +51,7 @@
 	<br />
 	<input type="button" id="upload" value="Upload Image">
 	<input id="uploadedUrl" placeholder="Uploaded Url" readonly>
+	<a href="#" id="uploadLink">Link</a>
 
 	<script>
 		var elems = {
@@ -60,6 +61,7 @@
 			fontSize: document.getElementById('fontSize'),
 			uploadButton: document.getElementById('upload'),
 			uploadedUrl: document.getElementById('uploadedUrl'),
+			uploadLink: document.getElementById('uploadLink'),
 		};
 
 		var tmp = new Meme({
@@ -92,12 +94,14 @@
 
 
 		elems.uploadButton.addEventListener('click', function() {
-			var fd = new FormData();
-			fd.append("file", tmp.getImageData());
+			// var fd = new FormData();
+			// fd.append("file", tmp.getImageData());
+			var fd = tmp.getImageData();
 
 			var xhr = new XMLHttpRequest();
-			xhr.open('POST', 'http://172.28.128.10/uploads', true);
-			xhr.setRequestHeader('Authorization', 'v7sT6Osgb17Gm1zuqFfOyGftQZ9iaEvXLDWyRfMg');
+			xhr.open('POST', 'http://api.com/uploads', true);
+			xhr.setRequestHeader('Authorization', 'authkey');
+			xhr.setRequestHeader('Content-Type', 'application/upload');
 
 			xhr.upload.onprogress = function(e) {
 				if (e.lengthComputable) {
@@ -109,7 +113,8 @@
 			xhr.onload = function() {
 				if (this.status == 200) {
 					var resp = JSON.parse(this.response);
-					console.log('Server got:', resp);
+					elems.uploadedUrl.value = resp.key;
+					elems.uploadLink.href = "https://amazonaws.com/" + resp.key;
 				}
 			}
 
