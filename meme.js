@@ -4,6 +4,7 @@ Meme.js
 
 Original Code by BuddyMeme
 Updated and extended by Robert Syvarth
+Updated and extended to works with AngularJS by Thomas
 
 ********************************************************************************
 
@@ -27,216 +28,220 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
-
+/*global $ */
+'use strict';
 
 window.Meme = function(opts){
-	var _meme = {
-		inited: false,
-		canvasElem: null,
-		canvasContext: null,
-		srcImage: null,
-		topText: '',
-		bottomText: '',
-		font: {
-			fillStyle: 'white',
-			strokeStyle: 'black',
-			strokeWidth: 2,
-			bold: false,
-			font: 'Impact',
-			fontSize: -1,
-			textAlign: 'center',
-			spacingMultiplier: 1.2
-		},
+  var _meme = {
+    inited: false,
+    canvasElem: null,
+    canvasContext: null,
+    srcImage: null,
+    topText: '',
+    bottomText: '',
+    font: {
+      fillStyle: 'white',
+      strokeStyle: 'black',
+      strokeWidth: 2,
+      bold: false,
+      font: 'Impact',
+      fontSize: -1,
+      textAlign: 'center',
+      spacingMultiplier: 1.2
+    },
 
-		construct: function(opts) {
-			if( opts.canvas ) { 
-				_meme.setCanvas(opts.canvas);
-			}
+    construct: function(opts) {
+      if( opts.canvas ) { 
+        _meme.setCanvas(opts.canvas);
+      }
 
-			if( opts.image ) {
-				_meme.setImage(opts.image);
-			}
+      if( opts.image ) {
+        _meme.setImage(opts.image);
+      }
 
-			if( opts.topText ) {
-				_meme.setTopText(opts.topText);
-			}
+      if( opts.topText ) {
+        _meme.setTopText(opts.topText);
+      }
 
-			if( opts.bottomText ) {
-				_meme.setBottomText(opts.bottomText);
-			}
+      if( opts.bottomText ) {
+        _meme.setBottomText(opts.bottomText);
+      }
 
-			if( opts.font ) {
-				_meme.setFont(opts.font);
-			}
+      if( opts.font ) {
+        _meme.setFont(opts.font);
+      }
 
-			_meme.inited = true;
-		},
+      _meme.inited = true;
+    },
 
-		setCanvas: function(canvas) {
-			//If we have a string or jQuery element, get the DOM object
-			if (_meme.isString(canvas)) { 
-				canvas = document.getElementById(canvas);
-			} else if (typeof $ == 'object' && (canvas instanceof $)) { 
-				canvas = canvas[0];
-			}
+    setCanvas: function(canvas) {
+      //If we have a string or jQuery element, get the DOM object
+      if (_meme.isString(canvas)) { 
+        canvas = document.getElementById(canvas);
+      } else if (typeof $ === 'object' && (canvas instanceof $)) { 
+        canvas = canvas[0];
+      }
 
-			if (!(canvas instanceof HTMLCanvasElement)) {
-				throw new Error('Invalid canvas');
-			}
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        throw new Error('Invalid canvas');
+      }
 
-			_meme.canvasElem = canvas;
-			_meme.canvasContext = canvas.getContext('2d');
+      _meme.canvasElem = canvas;
+      _meme.canvasContext = canvas.getContext('2d');
 
-			_meme.redraw();
-		},
+      _meme.redraw();
+    },
 
-		setCanvasDimensions: function(w, h) {
-			_meme.canvasElem.width = w;
-			_meme.canvasElem.height = h;
-		},
+    setCanvasDimensions: function(w, h) {
+      _meme.canvasElem.width = w;
+      _meme.canvasElem.height = h;
+    },
 
-		setImage: function(image) {
-			if (_meme.isString(image)) {
-				var src = image;
-				image = new Image();
-				image.crossOrigin = 'anonymous';
-				image.src = src;
-			}
+    setImage: function(image) {
+      if (_meme.isString(image)) {
+        var src = image;
+        image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.src = src;
+      }
 
-			if (!(image instanceof Image)) {
-				throw new Error('Invalid image');
-			}
+      if (!(image instanceof Image)) {
+        throw new Error('Invalid image');
+      }
 
-			_meme.srcImage = image;
-			_meme.srcImage.addEventListener('load', _meme.imageLoaded);
-		},
+      _meme.srcImage = image;
+      _meme.srcImage.addEventListener('load', _meme.imageLoaded);
+    },
 
-		setTopText: function(text) {
-			_meme.topText = text;
-			_meme.redraw();
-		},
+    setTopText: function(text) {
+      _meme.topText = text;
+      _meme.redraw();
+    },
 
-		setBottomText: function(text) {
-			_meme.bottomText = text;
-			_meme.redraw();
-		},
+    setBottomText: function(text) {
+      _meme.bottomText = text;
+      _meme.redraw();
+    },
 
-		setFont: function(font) {
-			for(var key in _meme.font) {
-				_meme.font[key] = (typeof font[key] != 'undefined') ? font[key] : _meme.font[key];
-			}
-			_meme.redraw();
-		},
+    setFont: function(font) {
+      for(var key in _meme.font) {
+        _meme.font[key] = (typeof font[key] !== 'undefined') ? font[key] : _meme.font[key];
+      }
+      _meme.redraw();
+    },
 
-		redraw: function() {
-			if(!_meme.inited){ return false; }
+    redraw: function() {
+      if(!_meme.inited){ return false; }
 
-			_meme.drawImage();
-			_meme.drawText(_meme.topText, 'top');
-			_meme.drawText(_meme.bottomText, 'bottom');
-		},
+      _meme.drawImage();
+      _meme.drawText(_meme.topText, 'top');
+      _meme.drawText(_meme.bottomText, 'bottom');
+    },
 
-		drawText: function(text, topOrBottom, y) {
-			var canvas = _meme.canvasElem;
-			var context = _meme.canvasContext;
+    drawText: function(text, topOrBottom, y) {
+      var canvas = _meme.canvasElem;
+      var context = _meme.canvasContext;
 
-			// Variable setup
-			topOrBottom = topOrBottom || 'top';
-			_meme.canvasContext.textBaseline = topOrBottom;
+      // Variable setup
+      topOrBottom = topOrBottom || 'top';
+      _meme.canvasContext.textBaseline = topOrBottom;
 
-			var fontSize = _meme.getFontSize();
-			var x = canvas.width / 2;
+      var fontSize = _meme.getFontSize();
+      var x = canvas.width / 2;
 
-			if (typeof y === 'undefined') {
-				y = topOrBottom === 'bottom' ? canvas.height : 0;
-			}
+      if (typeof y === 'undefined') {
+        y = topOrBottom === 'bottom' ? canvas.height : 0;
+      }
 
-			// Should we split it into multiple lines?
-			if (context.measureText(text).width > canvas.width) {
+      // Should we split it into multiple lines?
+      if (context.measureText(text).width > canvas.width) {
 
-				// Split word by word
-				var words = text.split(' ');
-				var wordsLength = words.length;
+        // Split word by word
+        var words = text.split(' ');
+        var wordsLength = words.length,
+          justThis;
 
-				// Start with the entire string, removing one word at a time. If
-				// that removal lets us make a line, place the line and recurse with
-				// the rest. Removes words from the back if placing at the top;
-				// removes words at the front if placing at the bottom.
-				if (topOrBottom === 'top') {
-					var i = wordsLength;
-					while (i --) {
-						var justThis = words.slice(0, i).join(' ');
-						if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-							_meme.drawText(justThis, topOrBottom, y);
-							_meme.drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
-							return;
-						}
-					}
-				}
-				else if (topOrBottom === 'bottom') {
-					for (var i = 0; i < wordsLength; i ++) {
-						var justThis = words.slice(i, wordsLength).join(' ');
-						if (context.measureText(justThis).width < (canvas.width * 1.0)) {
-							_meme.drawText(justThis, topOrBottom, y);
-							_meme.drawText(words.slice(0, i).join(' '), topOrBottom, y - fontSize);
-							return;
-						}
-					}
-				}
-			}
+        // Start with the entire string, removing one word at a time. If
+        // that removal lets us make a line, place the line and recurse with
+        // the rest. Removes words from the back if placing at the top;
+        // removes words at the front if placing at the bottom.
+        if (topOrBottom === 'top') {
+          var i = wordsLength;
+          while (i --) {
+            justThis = words.slice(0, i).join(' ');
+            if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+              _meme.drawText(justThis, topOrBottom, y);
+              _meme.drawText(words.slice(i, wordsLength).join(' '), topOrBottom, y + fontSize);
+              return;
+            }
+          }
+        }
+        else if (topOrBottom === 'bottom') {
+          for (var j = 0; j < wordsLength; j ++) {
+            justThis = words.slice(j, wordsLength).join(' ');
+            if (context.measureText(justThis).width < (canvas.width * 1.0)) {
+              _meme.drawText(justThis, topOrBottom, y);
+              _meme.drawText(words.slice(0, j).join(' '), topOrBottom, y - fontSize);
+              return;
+            }
+          }
+        }
+      }
 
-			// Draw!
-			context.fillText(text, x, y, canvas.width * .95);
-			context.strokeText(text, x, y, canvas.width * .95);
-		},
+      // Draw!
+      context.fillText(text, x, y, canvas.width * 0.95);
+      context.strokeText(text, x, y, canvas.width * 0.95);
+    },
 
-		imageLoaded: function() {
-			_meme.redraw();
-		},
+    imageLoaded: function() {
+      _meme.redraw();
+    },
 
-		drawImage: function() {
-			var image = _meme.srcImage;
+    drawImage: function() {
+      var image = _meme.srcImage;
 
-			_meme.setCanvasDimensions(image.width, image.height);
-			_meme.canvasContext.drawImage(image, 0, 0);
+      _meme.setCanvasDimensions(image.width, image.height);
+      _meme.canvasContext.drawImage(image, 0, 0);
 
-			_meme.resetFont();
-		},
+      _meme.resetFont();
+    },
 
-		resetFont: function() {
-			// Set up text variables
-			_meme.canvasContext.fillStyle = _meme.font.fillStyle;
-			_meme.canvasContext.strokeStyle = _meme.font.strokeStyle;
-			_meme.canvasContext.lineWidth = _meme.font.strokeWidth;
-			_meme.canvasContext.textAlign = _meme.font.textAlign;
+    resetFont: function() {
+      // Set up text variables
+      _meme.canvasContext.fillStyle = _meme.font.fillStyle;
+      _meme.canvasContext.strokeStyle = _meme.font.strokeStyle;
+      _meme.canvasContext.lineWidth = _meme.font.strokeWidth;
+      _meme.canvasContext.textAlign = _meme.font.textAlign;
 
-			var bold = _meme.font.bold ? 'bold ' : '';
-			var fontSize = _meme.getFontSize() * _meme.font.spacingMultiplier;
-			_meme.canvasContext.font = bold + fontSize + 'px ' + _meme.font.font;
-		},
+      var bold = _meme.font.bold ? 'bold ' : '';
+      var fontSize = _meme.getFontSize() * _meme.font.spacingMultiplier;
+      _meme.canvasContext.font = bold + fontSize + 'px ' + _meme.font.font;
+    },
 
-		getFontSize: function() {
-			return  _meme.font.fontSize == -1 ? (_meme.canvasElem.height / 8) : _meme.font.fontSize;
-		},
+    getFontSize: function() {
+      return  _meme.font.fontSize === -1 ? (_meme.canvasElem.height / 8) : _meme.font.fontSize;
+    },
 
-		getImageData: function() {
-			return _meme.canvasElem.toDataURL('image/png');
-		},
+    getImageData: function(quality) {
+      var qual = quality ? quality/100 : 1;
+      return _meme.canvasElem.toDataURL('image/jpeg',qual);
+    },
 
-		isString: function(val) {
-			return typeof val == 'string' || val instanceof String;
-		}
-	};
 
-	_meme.construct(opts);
+    isString: function(val) {
+      return typeof val === 'string' || val instanceof String;
+    }
+  };
 
-	return {
-		setCanvas: 		_meme.setCanvas,
-		setImage: 		_meme.setImage,
-		setTopText: 	_meme.setTopText,
-		setBottomText: 	_meme.setBottomText,
-		setFont: 		_meme.setFont,
-		redraw: 		_meme.redraw,
-		getImageData: 	_meme.getImageData,
-	}
+  _meme.construct(opts);
+
+  return {
+    setCanvas:    _meme.setCanvas,
+    setImage:     _meme.setImage,
+    setTopText:   _meme.setTopText,
+    setBottomText:  _meme.setBottomText,
+    setFont:    _meme.setFont,
+    redraw:     _meme.redraw,
+    getImageData:   _meme.getImageData
+  };
 };
